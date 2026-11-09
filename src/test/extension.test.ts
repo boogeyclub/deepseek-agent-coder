@@ -12,4 +12,17 @@ suite('Extension Test Suite', () => {
 		assert.strictEqual(-1, [1, 2, 3].indexOf(5));
 		assert.strictEqual(-1, [1, 2, 3].indexOf(0));
 	});
+
+	test('registers the DeepSeek commands', async () => {
+		const commands = await vscode.commands.getCommands(true);
+		for (const command of [
+			'deepseekAgent.openChat',
+			'deepseekAgent.newChat',
+			'deepseekAgent.openSettings',
+			'deepseekAgent.setApiKey',
+			'deepseekAgent.clearApiKey',
+		]) {
+			assert.ok(commands.includes(command), `missing command: ${command}`);
+		}
+	});
 });

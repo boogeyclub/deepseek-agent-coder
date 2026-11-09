@@ -1,23 +1,125 @@
 {
   "name": "deepseek-agent-coder",
-  "displayName": "deepseek-agent-coder",
-  "description": "Visual Studio Code extension for deepseek api agent.",
-  "version": "0.0.1",
+  "displayName": "DeepSeek Agent Coder",
+  "description": "DeepSeek chat agent for VS Code - a dockable chat panel that talks to the DeepSeek API with your own key.",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.145.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Machine Learning",
+    "Programming Languages"
   ],
-  "activationEvents": [],
+  "keywords": [
+    "deepseek",
+    "ai",
+    "chat",
+    "assistant",
+    "copilot"
+  ],
+  "activationEvents": [
+    "onView:deepseekAgent.chat"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "deepseekAgent",
+          "title": "DeepSeek Agent",
+          "icon": "media/deepseek.svg"
+        }
+      ]
+    },
+    "views": {
+      "deepseekAgent": [
+        {
+          "type": "webview",
+          "id": "deepseekAgent.chat",
+          "name": "Chat",
+          "icon": "media/deepseek.svg",
+          "contextualTitle": "DeepSeek Agent"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "deepseek-agent-coder.helloWorld",
-        "title": "Hello World"
+        "command": "deepseekAgent.openChat",
+        "title": "Open Chat",
+        "category": "DeepSeek"
+      },
+      {
+        "command": "deepseekAgent.chat.focus",
+        "title": "Focus on Chat View",
+        "category": "DeepSeek"
+      },
+      {
+        "command": "deepseekAgent.newChat",
+        "title": "New Chat",
+        "category": "DeepSeek",
+        "icon": "$(add)"
+      },
+      {
+        "command": "deepseekAgent.openSettings",
+        "title": "Chat Settings",
+        "category": "DeepSeek",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "deepseekAgent.setApiKey",
+        "title": "Set API Key",
+        "category": "DeepSeek"
+      },
+      {
+        "command": "deepseekAgent.clearApiKey",
+        "title": "Clear API Key",
+        "category": "DeepSeek"
       }
-    ]
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "deepseekAgent.newChat",
+          "when": "view == deepseekAgent.chat",
+          "group": "navigation@1"
+        },
+        {
+          "command": "deepseekAgent.openSettings",
+          "when": "view == deepseekAgent.chat",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "deepseekAgent.chat.focus",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "DeepSeek Agent",
+      "properties": {
+        "deepseekAgent.model": {
+          "type": "string",
+          "default": "deepseek-chat",
+          "enum": [
+            "deepseek-chat",
+            "deepseek-reasoner"
+          ],
+          "enumDescriptions": [
+            "General purpose model (DeepSeek-V3).",
+            "Reasoning model (DeepSeek-R1) that thinks before answering."
+          ],
+          "description": "Model used by the DeepSeek chat panel."
+        },
+        "deepseekAgent.baseUrl": {
+          "type": "string",
+          "default": "https://api.deepseek.com",
+          "description": "Base URL of the DeepSeek API. Point this at a compatible gateway or a local proxy if you use one."
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

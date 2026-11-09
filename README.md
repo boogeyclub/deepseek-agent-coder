@@ -1,71 +1,92 @@
-# deepseek-agent-coder README
+# DeepSeek Agent Coder
 
-This is the README for your extension "deepseek-agent-coder". After writing up a brief description, we recommend including the following sections.
+A dockable **DeepSeek chat panel** for VS Code. It sits in the activity bar next to Copilot, streams answers from the DeepSeek API, and keeps your API key in the OS keychain — never in `settings.json`.
+
+![activity bar](media/deepseek.svg)
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Dockable chat view** — a `webview` view in its own activity-bar container, so you can drag it to the left sidebar, the right sidebar, the secondary side bar, or the panel like any other VS Code view.
+- **Streaming chat** — token-by-token responses with markdown rendering, fenced code blocks with per-block **Copy** buttons, lists, quotes, links, and headings. Links open in your browser, not inside the webview.
+- **Settings built into the panel** — the gear button opens an in-panel settings page for the API key, model, and base URL. The key is written to `vscode.SecretStorage` (OS keychain/keyring) and is verified against `GET /models` when you save it.
+- **Model picker** — `deepseek-chat` (V3) and `deepseek-reasoner` (R1). Reasoning traces from R1 render in a collapsible *Reasoning* block above the answer.
+- **Stop, retry-free errors** — sending, aborting mid-stream, and friendly error messages for 401 / 402 / 429 / 5xx responses.
+- **Conversation survives reloads** — the transcript lives in the extension host (persisted per workspace) and is re-sent to the webview whenever it is recreated.
+- **Command palette** — `DeepSeek: Open Chat`, `New Chat`, `Chat Settings`, `Set API Key`, `Clear API Key`.
 
-For example if there is an image subfolder under your extension project workspace:
+## Getting started
 
-\!\[feature X\]\(images/feature-x.png\)
+1. Install dependencies and compile (or press `F5` to launch the Extension Development Host):
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+   ```bash
+   npm install
+   npm run compile
+   ```
 
-## Requirements
+2. Click the **DeepSeek** icon in the activity bar.
+3. Press the **gear** button (or run `DeepSeek: Set API Key`), paste a key from [platform.deepseek.com](https://platform.deepseek.com/api_keys), and hit **Save**. The panel reports whether the key was verified.
+4. Ask a question. `Enter` sends, `Shift+Enter` inserts a newline, and the send button turns into **Stop** while a response streams.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Extension settings
 
-## Extension Settings
+| Setting | Default | Description |
+| --- | --- | --- |
+| `deepseekAgent.model` | `deepseek-chat` | Model used by the panel. |
+| `deepseekAgent.baseUrl` | `https://api.deepseek.com` | API root. Point it at a compatible gateway, proxy, or self-hosted endpoint if you use one. `/chat/completions` is appended automatically. |
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+The API key is **not** a setting. It is stored through `vscode.SecretStorage` and can be removed with `DeepSeek: Clear API Key` or the **Remove key** button in the panel.
 
-For example:
+### Environment variable fallback
 
-This extension contributes the following settings:
+For development, `DEEPSEEK_API_KEY` in the environment of the extension host is used when no key has been saved in SecretStorage. The keychain value always wins.
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## Commands
 
-## Known Issues
+| Command | Description |
+| --- | --- |
+| `deepseekAgent.openChat` | Reveal and focus the chat panel. |
+| `deepseekAgent.newChat` | Clear the conversation. |
+| `deepseekAgent.openSettings` | Open the panel and its settings page. |
+| `deepseekAgent.setApiKey` | Prompt for an API key, store it, and verify it. |
+| `deepseekAgent.clearApiKey` | Delete the stored key. |
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## How it works
 
-## Release Notes
+```
+src/
+  extension.ts               activation, command and webview registration
+  chat/
+    chatViewProvider.ts      the WebviewViewProvider: HTML/CSP, message routing, state
+    deepseekClient.ts        fetch + streaming client for the DeepSeek API
+    sse.ts                   dependency-free Server-Sent Events parser
+    protocol.ts              typed messages between host and webview
+    transcript.ts            transcript model, limits, system prompt
+media/
+  chat.js                    webview UI: markdown renderer, streaming, settings
+  chat.css                   theme-aware styles built on VS Code CSS variables
+  deepseek.svg               activity bar icon
+```
 
-Users appreciate release notes as you update your extension.
+The webview never sees the API key. It posts intents (`send`, `stop`, `saveSettings`, …) to the extension host, which owns the key, the HTTP client, and the transcript, and streams `delta` messages back. Rendering is done with a small markdown-to-HTML function that escapes input first, under a strict CSP (`default-src 'none'`, nonce-only scripts, no inline styles).
 
-### 1.0.0
+## Development
 
-Initial release of ...
+```bash
+npm run watch    # incremental TypeScript build
+npm run lint     # eslint src
+npm test         # runs the mocha suites in a VS Code instance (downloads VS Code on first run)
+```
 
-### 1.0.1
+## Known issues
 
-Fixed issue #.
+- No editor context yet: the panel does not read the active file or selection, so you have to paste code into the chat. Editor context, inline edit commands and tool use are the next steps.
+- One conversation per workspace; there is no session history list.
+- `deepseek-reasoner` ignores `temperature`-style sampling parameters by design, so none are sent.
 
-### 1.1.0
+## Release notes
 
-Added features X, Y, and Z.
+### 0.1.0
 
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+- Dockable DeepSeek chat panel with streaming responses, markdown and code blocks.
+- In-panel settings with SecretStored and verified API key, model picker, custom base URL.
+- Command palette integration and per-workspace transcript persistence.
